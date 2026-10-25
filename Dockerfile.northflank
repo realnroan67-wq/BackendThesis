@@ -2,26 +2,39 @@
 # G2.1 review artifact: no deployment or migration is authorized by this file.
 FROM composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc AS composer
 
-FROM php:8.5.12-apache-bookworm@sha256:5e4418695f9b13b75edefaff547125bf6be267e865931731bdd5946461505736 AS platform
+FROM php:8.5.12-apache-bookworm@sha256:5e4418695f9b13b75edefaff547125bf6be267e865931731bdd5946461505736 AS php-base
+WORKDIR /var/www/html
+
+FROM php-base AS platform
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev libicu-dev libzip-dev libonig-dev unzip ca-certificates \
     && docker-php-ext-install -j2 pdo_pgsql bcmath intl mbstring zip \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=composer /usr/bin/composer /usr/local/bin/composer
-WORKDIR /var/www/html
-
 FROM platform AS build
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins --no-autoloader
 # .dockerignore excludes secrets, databases, caches and local runtime artifacts.
 COPY . .
-RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction --no-scripts --no-plugins \
+RUN mkdir -p database/factories database/seeders bootstrap/cache \
+    && composer dump-autoload --no-dev --classmap-authoritative --no-interaction --no-scripts --no-plugins \
     && composer check-platform-reqs --no-dev \
+    && php -r '$manifest = json_decode(file_get_contents("contracts/inquiry-v1.manifest.json"), true, flags: JSON_THROW_ON_ERROR); if (hash_file("sha256", "contracts/inquiry-validation.v1.json") !== $manifest["validation_sha256"]) { throw new RuntimeException("Inquiry contract hash mismatch."); } json_decode(file_get_contents("contracts/registration-validation-v1.json"), true, flags: JSON_THROW_ON_ERROR);' \
     && php -r 'if (!in_array("argon2id", password_algos(), true) || !extension_loaded("pdo_pgsql") || !extension_loaded("openssl") || !extension_loaded("Zend OPcache")) { fwrite(STDERR, "Required runtime capability missing.\n"); exit(1); }'
 
-FROM platform AS runtime
+FROM php-base AS runtime
+# Only shared libraries and compiled extensions enter the final image.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 libicu72 libzip4 libonig5 ca-certificates \
+    && apt-get purge -y --auto-remove $PHPIZE_DEPS \
+    && a2enmod rewrite headers \
+    && rm -rf /var/lib/apt/lists/* /usr/local/include/php /usr/local/lib/php/build /usr/src/php* \
+    && rm -f /usr/local/bin/phpize /usr/local/bin/php-config \
+    && ! command -v cc && ! command -v make && ! command -v composer
+COPY --from=platform /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=platform /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
 ENV APP_ENV=production APP_DEBUG=false \
     REGISTRATION_ENABLED=false INQUIRY_SUBMISSION_ENABLED=false \
     APACHE_RUN_DIR=/tmp/apache2 APACHE_LOCK_DIR=/tmp/apache2-lock \
@@ -31,7 +44,9 @@ COPY northflank-apache.conf /etc/apache2/sites-available/000-default.conf
 COPY northflank-php.ini /usr/local/etc/php/conf.d/zz-horizon.ini
 COPY northflank-entrypoint.sh /usr/local/bin/horizon-entrypoint
 RUN printf 'Listen 8080\n' > /etc/apache2/ports.conf \
-    && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache /tmp/apache2 /tmp/apache2-lock \
+    && mkdir -p storage/app/private storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache /tmp/apache2 /tmp/apache2-lock \
+    && chown root:root /var/www/html \
+    && chmod 0755 /var/www/html \
     && chown -R www-data:www-data storage bootstrap/cache /tmp/apache2 /tmp/apache2-lock \
     && chmod 0755 /usr/local/bin/horizon-entrypoint
 USER www-data

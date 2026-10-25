@@ -3,6 +3,11 @@
 !composer.json
 !composer.lock
 !artisan
+!contracts/
+contracts/**
+!contracts/inquiry-v1.manifest.json
+!contracts/inquiry-validation.v1.json
+!contracts/registration-validation-v1.json
 !app/
 !app/**
 !bootstrap/
