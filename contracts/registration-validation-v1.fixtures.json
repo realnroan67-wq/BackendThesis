@@ -1,0 +1,106 @@
+[
+  {
+    "name": "canonical_business",
+    "input": {
+      "name": " QA Contact ",
+      "email": " QA.Contact@Example.test ",
+      "password": "Unique river meadow passphrase 74!",
+      "password_confirmation": "Unique river meadow passphrase 74!",
+      "account_type": "business_user"
+    },
+    "valid": true,
+    "normalized": {
+      "name": "QA Contact",
+      "email": "qa.contact@example.test"
+    }
+  },
+  {
+    "name": "provider_intent",
+    "input": {
+      "name": " QA Contact ",
+      "email": " QA.Contact@Example.test ",
+      "password": "Unique river meadow passphrase 74!",
+      "password_confirmation": "Unique river meadow passphrase 74!",
+      "account_type": "property_provider"
+    },
+    "valid": true
+  },
+  {
+    "name": "forged_role",
+    "input": {
+      "name": " QA Contact ",
+      "email": " QA.Contact@Example.test ",
+      "password": "Unique river meadow passphrase 74!",
+      "password_confirmation": "Unique river meadow passphrase 74!",
+      "account_type": "business_user",
+      "role": "administrator"
+    },
+    "valid": false
+  },
+  {
+    "name": "common_password",
+    "input": {
+      "name": " QA Contact ",
+      "email": " QA.Contact@Example.test ",
+      "password": "password123456789",
+      "password_confirmation": "password123456789",
+      "account_type": "business_user"
+    },
+    "valid": false
+  },
+  {
+    "name": "confirmation_mismatch",
+    "input": {
+      "name": " QA Contact ",
+      "email": " QA.Contact@Example.test ",
+      "password": "Unique river meadow passphrase 74!",
+      "password_confirmation": "Different long password 42!",
+      "account_type": "business_user"
+    },
+    "valid": false
+  },
+  {
+    "name": "unicode_password",
+    "input": {
+      "name": " QA Contact ",
+      "email": " QA.Contact@Example.test ",
+      "password": "????????????????????",
+      "password_confirmation": "????????????????????",
+      "account_type": "business_user"
+    },
+    "valid": true
+  },
+  {
+    "name": "short_password",
+    "input": {
+      "name": " QA Contact ",
+      "email": " QA.Contact@Example.test ",
+      "password": "short",
+      "password_confirmation": "short",
+      "account_type": "business_user"
+    },
+    "valid": false
+  },
+  {
+    "name": "nested_email",
+    "input": {
+      "name": " QA Contact ",
+      "email": ["a@example.test"],
+      "password": "Unique river meadow passphrase 74!",
+      "password_confirmation": "Unique river meadow passphrase 74!",
+      "account_type": "business_user"
+    },
+    "valid": false
+  },
+  {
+    "name": "whitespace_intent",
+    "input": {
+      "name": " QA Contact ",
+      "email": " QA.Contact@Example.test ",
+      "password": "Unique river meadow passphrase 74!",
+      "password_confirmation": "Unique river meadow passphrase 74!",
+      "account_type": " business_user "
+    },
+    "valid": false
+  }
+]

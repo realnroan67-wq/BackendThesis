@@ -1,0 +1,48 @@
+{
+  "version": "1.0.0",
+  "normalization": {
+    "name": "Trim ASCII space, tab, CR, LF only",
+    "email": "Trim ASCII space, tab, CR, LF; lowercase ASCII",
+    "password": "Preserve exact Unicode code points and UTF-8 bytes"
+  },
+  "body_max_bytes": 16384,
+  "fields": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "ascii": true,
+      "maxBytes": 254
+    },
+    "password": {
+      "type": "string",
+      "minLength": 15,
+      "maxLength": 128,
+      "maxBytes": 512
+    },
+    "password_confirmation": {
+      "type": "string",
+      "equals": "password"
+    },
+    "account_type": {
+      "enum": ["business_user", "property_provider"]
+    }
+  },
+  "additionalProperties": false,
+  "common_passwords": [
+    "passwordpassword",
+    "password123456789",
+    "123456789012345",
+    "1234567890123456",
+    "qwertyuiopasdfgh",
+    "letmeinletmeinletmein",
+    "thisisapassword",
+    "correct horse battery staple",
+    "a sufficiently long password"
+  ],
+  "common_password_comparison": "ASCII lowercase only; no normalization of the actual password"
+}

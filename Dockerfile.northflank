@@ -1,0 +1,40 @@
+# syntax=docker/dockerfile:1
+# G2.1 review artifact: no deployment or migration is authorized by this file.
+FROM composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc AS composer
+
+FROM php:8.5.12-apache-bookworm@sha256:5e4418695f9b13b75edefaff547125bf6be267e865931731bdd5946461505736 AS platform
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq-dev libicu-dev libzip-dev libonig-dev unzip ca-certificates \
+    && docker-php-ext-install -j2 pdo_pgsql bcmath intl mbstring zip \
+    && a2enmod rewrite headers \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=composer /usr/bin/composer /usr/local/bin/composer
+WORKDIR /var/www/html
+
+FROM platform AS build
+ENV COMPOSER_ALLOW_SUPERUSER=1
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-scripts --no-plugins --no-autoloader
+# .dockerignore excludes secrets, databases, caches and local runtime artifacts.
+COPY . .
+RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction --no-scripts --no-plugins \
+    && composer check-platform-reqs --no-dev \
+    && php -r 'if (!in_array("argon2id", password_algos(), true) || !extension_loaded("pdo_pgsql") || !extension_loaded("openssl") || !extension_loaded("Zend OPcache")) { fwrite(STDERR, "Required runtime capability missing.\n"); exit(1); }'
+
+FROM platform AS runtime
+ENV APP_ENV=production APP_DEBUG=false \
+    REGISTRATION_ENABLED=false INQUIRY_SUBMISSION_ENABLED=false \
+    APACHE_RUN_DIR=/tmp/apache2 APACHE_LOCK_DIR=/tmp/apache2-lock \
+    APACHE_PID_FILE=/tmp/apache2/apache2.pid
+COPY --from=build --chown=root:root /var/www/html /var/www/html
+COPY northflank-apache.conf /etc/apache2/sites-available/000-default.conf
+COPY northflank-php.ini /usr/local/etc/php/conf.d/zz-horizon.ini
+COPY northflank-entrypoint.sh /usr/local/bin/horizon-entrypoint
+RUN printf 'Listen 8080\n' > /etc/apache2/ports.conf \
+    && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache /tmp/apache2 /tmp/apache2-lock \
+    && chown -R www-data:www-data storage bootstrap/cache /tmp/apache2 /tmp/apache2-lock \
+    && chmod 0755 /usr/local/bin/horizon-entrypoint
+USER www-data
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/horizon-entrypoint"]
+CMD ["apache2-foreground"]

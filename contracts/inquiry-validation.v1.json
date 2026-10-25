@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Horizon Realty inquiry creation validation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["property_id", "contact_name", "contact_email", "message"],
+  "x-contract-version": "1.0.0",
+  "x-normalization": {
+    "trim": "ASCII space, tab, carriage return, and line feed at string boundaries",
+    "blank-to-null": ["business_name", "contact_phone"],
+    "length-unit": "Unicode code points",
+    "phone-digits": { "minimum": 7, "maximum": 15 },
+    "email-policy": "single non-whitespace local and domain parts, one @, domain contains a dot; no DNS/MX or stricter RFC filter in v1"
+  },
+  "properties": {
+    "property_id": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "business_name": {
+      "type": ["string", "null"],
+      "maxLength": 150,
+      "x-client-field": "businessName"
+    },
+    "contact_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 150,
+      "x-client-field": "contactName"
+    },
+    "contact_email": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 254,
+      "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+      "x-client-field": "email"
+    },
+    "contact_phone": {
+      "type": ["string", "null"],
+      "maxLength": 30,
+      "pattern": "^\\+?[0-9\\s().-]+$",
+      "x-client-field": "phone"
+    },
+    "message": { "type": "string", "minLength": 20, "maxLength": 2000, "x-client-field": "message" }
+  }
+}

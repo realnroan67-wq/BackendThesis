@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "files": {
+    "registration-validation-v1.json": "d7a98cba87a8e3863360c5a4fee406a4880b87facdd207a6aada682b1d8d445b",
+    "registration-validation-v1.fixtures.json": "b7fbc80e5756ddfcefe75ba3f6b55290b63b2c67e995787a2239550edd5aaa3c",
+    "registration-api-v1.openapi.json": "2fe3a6f03e2df8dd44ee669b6198bbc07f4afdacf8d83e3bb0d1afa9bfe77ad1"
+  }
+}

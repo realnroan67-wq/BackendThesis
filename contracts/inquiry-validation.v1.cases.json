@@ -1,0 +1,41 @@
+[
+  {
+    "name": "optional snapshots omitted",
+    "patch": {},
+    "omit": ["business_name", "contact_phone"],
+    "valid": true
+  },
+  {
+    "name": "optional snapshots null",
+    "patch": { "business_name": null, "contact_phone": null },
+    "valid": true
+  },
+  { "name": "invalid email", "patch": { "contact_email": "not-an-email" }, "valid": false },
+  { "name": "short message", "patch": { "message": "Short" }, "valid": false },
+  {
+    "name": "Unicode message boundary",
+    "patch": { "message": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀" },
+    "valid": true
+  },
+  { "name": "phone has too few digits", "patch": { "contact_phone": "123" }, "valid": false },
+  { "name": "phone text rejected", "patch": { "contact_phone": "call me" }, "valid": false },
+  {
+    "name": "sender override rejected",
+    "patch": { "business_user_id": 999 },
+    "valid": false,
+    "apiOnly": true
+  },
+  {
+    "name": "provider override rejected",
+    "patch": { "provider_id": 999 },
+    "valid": false,
+    "apiOnly": true
+  },
+  {
+    "name": "status override rejected",
+    "patch": { "status": "submitted" },
+    "valid": false,
+    "apiOnly": true
+  },
+  { "name": "invalid property ID", "patch": { "property_id": 0 }, "valid": false, "apiOnly": true }
+]
